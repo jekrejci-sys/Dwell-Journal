@@ -185,7 +185,9 @@ export default function JournalPage() {
   return (
     <div style={S.page}>
       <header style={S.header}>
-        <div style={S.headerLeft}><span style={S.headerLogo}>dwell</span><span style={S.headerLogoSub}>journal</span></div>
+        <div style={S.headerLeft}>
+  <img src="/logo.png" alt="PCBC Dwell Journal" style={{ height: '36px', width: 'auto' }} />
+</div>
         <div style={S.headerRight}>
           <span style={S.headerGreeting}>{firstName ? `Hi, ${firstName}` : ''}</span>
           <button onClick={handleSignOut} style={S.signOutBtn}>Sign Out</button>
