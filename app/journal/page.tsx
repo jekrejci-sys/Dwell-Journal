@@ -275,7 +275,6 @@ export default function JournalPage() {
               {SECTIONS.map(sec => (
                 <div key={sec.key} style={S.card}>
                   <div style={{...S.sectionHeader,borderLeftColor:sec.color}}>
-                    <span style={S.sectionIcon}>{sec.icon}</span>
                     <h3 style={{...S.sectionLabel,color:sec.color}}>{sec.label}</h3>
                   </div>
                   <p style={S.sectionPrompt}>{sec.prompt}</p>
@@ -333,7 +332,6 @@ export default function JournalPage() {
               {SECTIONS.map(sec=>(
                 <div key={sec.key} style={S.card}>
                   <div style={{...S.sectionHeader,borderLeftColor:sec.color}}>
-                    <span style={S.sectionIcon}>{sec.icon}</span>
                     <h3 style={{...S.sectionLabel,color:sec.color}}>{sec.label}</h3>
                   </div>
                   <p style={S.readonlyText}>{viewingEntry[sec.key]||<em style={{color:'#bbb'}}>Not filled in</em>}</p>
