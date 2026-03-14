@@ -131,10 +131,8 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div style={S.logoWrap}>
-          <div style={S.logoIcon}>✦</div>
-          <h1 style={S.logoTitle}>dwell</h1>
-          <p style={S.logoSub}>journal</p>
-        </div>
+  <img src="/logo.png" alt="PCBC Dwell Journal" style={{ maxWidth: '275px', height: 'auto' }} />
+</div>
 
         <p style={S.tagline}>
           Sign up to receive daily scripture texts and access your personal journal.
