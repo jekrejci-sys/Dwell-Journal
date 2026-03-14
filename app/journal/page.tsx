@@ -189,7 +189,7 @@ export default function JournalPage() {
 
   if (loading) return <div style={S.loadingPage}><p style={S.loadingText}>Opening your journal…</p></div>
 
-const inviteSmsUrl = "sms:?body=Hey!%20I%20have%20been%20using%20the%20PCBC%20Dwell%20Journal%20app%20for%20my%20daily%20Bible%20reading.%20I%20think%20you%20would%20love%20it!%20Sign%20up%20here%3A%20https%3A%2F%2Fdwell-journal.vercel.app"
+const inviteSmsUrl = "https://community.poweredbytext.com/go-sms/?to=&msg=Hey!%20I've%20been%20using%20the%20PCBC%20Dwell%20Journal%20app%20for%20my%20daily%20Bible%20reading.%20I%20think%20you'd%20love%20it!%20Sign%20up%20here%3A%20https%3A%2F%2Fdwell-journal.vercel.app"
 
   return (
     <div style={S.page}>
