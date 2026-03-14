@@ -31,10 +31,10 @@ const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${Stri
 const formatDate = (d: string) => new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})
 
 const SECTIONS = [
-  {key:'scripture' as const,label:'SCRIPTURE',color:'#2D4F9E',icon:'📖',prompt:"Write out 2–3 verses that stood out to you from today's reading."},
-  {key:'hear'      as const,label:'HEAR',     color:'#B8933A',icon:'👂',prompt:'What do you hear God saying to you through these verses?'},
-  {key:'obey'      as const,label:'OBEY',     color:'#2D4F9E',icon:'🙏',prompt:'How can you be obedient to what God is telling you today?'},
-  {key:'tell'      as const,label:'TELL',     color:'#B8933A',icon:'💬',prompt:'Who do you know that might need this word of encouragement today?'},
+  {key:'scripture' as const,label:'SCRIPTURE',color:'#2D4F9E',prompt:"Write out 2–3 verses that stood out to you from today's reading."},
+  {key:'hear'      as const,label:'HEAR',     color:'#B8933A',prompt:'What do you hear God saying to you through these verses?'},
+  {key:'obey'      as const,label:'OBEY',     color:'#2D4F9E',prompt:'How can you be obedient to what God is telling you today?'},
+  {key:'tell'      as const,label:'TELL',     color:'#B8933A',prompt:'Who do you know that might need this word of encouragement today?'},
 ]
 
 // Reading plan — still hardcoded as fallback; Supabase table overrides when populated
