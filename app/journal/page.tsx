@@ -31,10 +31,10 @@ const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${Stri
 const formatDate = (d: string) => new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})
 
 const SECTIONS = [
-  {key:'scripture' as const,label:'SCRIPTURE',color:'#2D4F9E',prompt:"Write out 2–3 verses that stood out to you from today's reading."},
-  {key:'hear'      as const,label:'HEAR',     color:'#B8933A',prompt:'What do you hear God saying to you through these verses?'},
-  {key:'obey'      as const,label:'OBEY',     color:'#2D4F9E',prompt:'How can you be obedient to what God is telling you today?'},
-  {key:'tell'      as const,label:'TELL',     color:'#B8933A',prompt:'Who do you know that might need this word of encouragement today?'},
+  {key:'scripture' as const,label:'SCRIPTURE',color:'#2D4F9E',icon:'📖',prompt:"Write out 2–3 verses that stood out to you from today's reading."},
+  {key:'hear'      as const,label:'HEAR',     color:'#B8933A',icon:'👂',prompt:'What do you hear God saying to you through these verses?'},
+  {key:'obey'      as const,label:'OBEY',     color:'#2D4F9E',icon:'🙏',prompt:'How can you be obedient to what God is telling you today?'},
+  {key:'tell'      as const,label:'TELL',     color:'#B8933A',icon:'💬',prompt:'Who do you know that might need this word of encouragement today?'},
 ]
 
 // Reading plan — still hardcoded as fallback; Supabase table overrides when populated
@@ -62,41 +62,6 @@ const READING_PLAN: Record<string, string> = {
   '2026-03-26':'2 Thessalonians 3','2026-03-27':'Psalm 67',
 }
 
-const BIBLE_COM_URLS: Record<string,string> = {
-  '1 Kings 1':'https://www.bible.com/bible/59/1KI.1','1 Kings 2':'https://www.bible.com/bible/59/1KI.2',
-  '1 Kings 3':'https://www.bible.com/bible/59/1KI.3','1 Kings 4':'https://www.bible.com/bible/59/1KI.4',
-  '1 Kings 5':'https://www.bible.com/bible/59/1KI.5','1 Kings 6':'https://www.bible.com/bible/59/1KI.6',
-  '1 Kings 7':'https://www.bible.com/bible/59/1KI.7','1 Kings 8':'https://www.bible.com/bible/59/1KI.8',
-  '1 Kings 9':'https://www.bible.com/bible/59/1KI.9','1 Kings 10':'https://www.bible.com/bible/59/1KI.10',
-  '1 Kings 11':'https://www.bible.com/bible/59/1KI.11','1 Kings 12':'https://www.bible.com/bible/59/1KI.12',
-  '1 Kings 13':'https://www.bible.com/bible/59/1KI.13','1 Kings 14':'https://www.bible.com/bible/59/1KI.14',
-  '1 Kings 15':'https://www.bible.com/bible/59/1KI.15','1 Kings 16':'https://www.bible.com/bible/59/1KI.16',
-  '1 Kings 17':'https://www.bible.com/bible/59/1KI.17','1 Kings 18':'https://www.bible.com/bible/59/1KI.18',
-  '1 Kings 19':'https://www.bible.com/bible/59/1KI.19','1 Kings 20':'https://www.bible.com/bible/59/1KI.20',
-  '1 Kings 21':'https://www.bible.com/bible/59/1KI.21','1 Kings 22':'https://www.bible.com/bible/59/1KI.22',
-  'Psalm 55':'https://www.bible.com/bible/59/PSA.55','Psalm 56':'https://www.bible.com/bible/59/PSA.56',
-  'Psalm 57':'https://www.bible.com/bible/59/PSA.57','Psalm 58':'https://www.bible.com/bible/59/PSA.58',
-  'Psalm 59':'https://www.bible.com/bible/59/PSA.59','Psalm 60':'https://www.bible.com/bible/59/PSA.60',
-  'Psalm 61':'https://www.bible.com/bible/59/PSA.61','Psalm 62':'https://www.bible.com/bible/59/PSA.62',
-  'Psalm 63':'https://www.bible.com/bible/59/PSA.63','Psalm 64':'https://www.bible.com/bible/59/PSA.64',
-  'Psalm 65':'https://www.bible.com/bible/59/PSA.65','Psalm 66':'https://www.bible.com/bible/59/PSA.66',
-  'Psalm 67':'https://www.bible.com/bible/59/PSA.67',
-  'Song of Solomon 1':'https://www.bible.com/bible/59/SNG.1','Song of Solomon 2':'https://www.bible.com/bible/59/SNG.2',
-  'Song of Solomon 3':'https://www.bible.com/bible/59/SNG.3','Song of Solomon 4':'https://www.bible.com/bible/59/SNG.4',
-  'Song of Solomon 5':'https://www.bible.com/bible/59/SNG.5','Song of Solomon 6':'https://www.bible.com/bible/59/SNG.6',
-  'Song of Solomon 7':'https://www.bible.com/bible/59/SNG.7','Song of Solomon 8':'https://www.bible.com/bible/59/SNG.8',
-  'Romans 1':'https://www.bible.com/bible/59/ROM.1','Romans 2':'https://www.bible.com/bible/59/ROM.2',
-  'Romans 3':'https://www.bible.com/bible/59/ROM.3','Romans 4':'https://www.bible.com/bible/59/ROM.4',
-  'Romans 5':'https://www.bible.com/bible/59/ROM.5','Romans 6':'https://www.bible.com/bible/59/ROM.6',
-  'Romans 7':'https://www.bible.com/bible/59/ROM.7','Romans 8':'https://www.bible.com/bible/59/ROM.8',
-  'Romans 9':'https://www.bible.com/bible/59/ROM.9','Romans 10':'https://www.bible.com/bible/59/ROM.10',
-  'Romans 11':'https://www.bible.com/bible/59/ROM.11','Romans 12':'https://www.bible.com/bible/59/ROM.12',
-  'Romans 13':'https://www.bible.com/bible/59/ROM.13','Romans 14':'https://www.bible.com/bible/59/ROM.14',
-  'Romans 15':'https://www.bible.com/bible/59/ROM.15','Romans 16':'https://www.bible.com/bible/59/ROM.16',
-  '2 Thessalonians 1':'https://www.bible.com/bible/59/2TH.1',
-  '2 Thessalonians 2':'https://www.bible.com/bible/59/2TH.2',
-  '2 Thessalonians 3':'https://www.bible.com/bible/59/2TH.3',
-}
 
 const BLUE='#2D4F9E', GOLD='#B8933A', CREAM='#FAF7F2', WHITE='#FFFFFF'
 
@@ -119,7 +84,7 @@ const S: Record<string,React.CSSProperties> = {
   passageDate:{fontSize:'12px',letterSpacing:'2px',textTransform:'uppercase',color:'rgba(255,255,255,0.65)',margin:'0 0 8px'},
   passageTitleRow:{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'16px'},
   passageTitle:{fontSize:'28px',fontWeight:'400',margin:'0',fontStyle:'italic'},
-  bibleBtn:{display:'inline-flex',alignItems:'center',gap:'8px',background:'rgba(255,255,255,0.15)',border:'1px solid rgba(255,255,255,0.35)',color:'#fff',borderRadius:'4px',padding:'10px 18px',fontSize:'13px',fontFamily:"'Georgia',serif",cursor:'pointer',textDecoration:'none',whiteSpace:'nowrap'},
+  inviteBtn:{display:'inline-flex',alignItems:'center',gap:'8px',background:'rgba(255,255,255,0.15)',border:'1px solid rgba(255,255,255,0.35)',color:'#fff',borderRadius:'4px',padding:'10px 18px',fontSize:'13px',fontFamily:"'Georgia',serif",cursor:'pointer',textDecoration:'none',whiteSpace:'nowrap'},
   esvCard:{background:'#FFFEF9',border:'1px solid #E8E0D4',borderTop:'none',borderRadius:'0 0 6px 6px',padding:'24px 32px',marginBottom:'28px',boxShadow:'0 2px 8px rgba(0,0,0,0.04)'},
   esvBadge:{background:GOLD,color:WHITE,fontSize:'10px',letterSpacing:'2px',padding:'3px 10px',borderRadius:'20px',textTransform:'uppercase',fontFamily:"'Georgia',serif",display:'inline-block',marginBottom:'16px'},
   esvText:{fontSize:'15px',lineHeight:'2',color:'#2A2A2A',whiteSpace:'pre-wrap',fontFamily:"'Georgia',serif",margin:'0'},
@@ -152,7 +117,6 @@ export default function JournalPage() {
   const router    = useRouter()
   const [today]   = useState(todayStr())
   const [passage, setPassage]   = useState(READING_PLAN[todayStr()] ?? 'No passage scheduled today')
-  const [bibleUrl, setBibleUrl] = useState(BIBLE_COM_URLS[todayStr()] ?? '')
   const [scripture, setScripture] = useState('')
   const [hear, setHear]           = useState('')
   const [obey, setObey]           = useState('')
@@ -180,12 +144,11 @@ export default function JournalPage() {
     // Check Supabase reading_plan table first (overrides hardcoded plan)
     const { data: plan } = await supabase
       .from('reading_plan')
-      .select('passage, bible_url')
+      .select('passage')
       .eq('entry_date', today)
       .single()
     if (plan?.passage) {
       setPassage(plan.passage)
-      setBibleUrl(plan.bible_url ?? BIBLE_COM_URLS[plan.passage] ?? '')
     }
 
     // Load today's journal entry if it exists
@@ -226,12 +189,12 @@ export default function JournalPage() {
 
   if (loading) return <div style={S.loadingPage}><p style={S.loadingText}>Opening your journal…</p></div>
 
-  const activeBibleUrl = bibleUrl || BIBLE_COM_URLS[passage] || ''
+  const inviteSmsUrl = "sms:?body=Hey!%20I've%20been%20using%20the%20PCBC%20Dwell%20Journal%20app%20for%20my%20daily%20Bible%20reading.%20I%20think%20you'd%20love%20it!%20Sign%20up%20here%3A%20https%3A%2F%2Fdwell-journal.vercel.app"
 
   return (
     <div style={S.page}>
       <header style={S.header}>
-        <div style={S.headerLeft}>
+       <div style={S.headerLeft}>
   <img src="/logo-white.png" alt="PCBC Dwell Journal" style={{ height: '60px', width: 'auto' }} />
 </div>
         <div style={S.headerRight}>
@@ -253,11 +216,9 @@ export default function JournalPage() {
               <p style={S.passageDate}>{formatDate(today)}</p>
               <div style={S.passageTitleRow}>
                 <h2 style={S.passageTitle}>{passage}</h2>
-                {activeBibleUrl && (
-                  <a href={activeBibleUrl} target="_blank" rel="noopener noreferrer" style={S.bibleBtn}>
-                    📖 Read on Bible.com
-                  </a>
-                )}
+                <a href={inviteSmsUrl} style={S.inviteBtn}>
+                  ✉️ Invite a Friend
+                </a>
               </div>
             </div>
 
@@ -275,6 +236,7 @@ export default function JournalPage() {
               {SECTIONS.map(sec => (
                 <div key={sec.key} style={S.card}>
                   <div style={{...S.sectionHeader,borderLeftColor:sec.color}}>
+                    <span style={S.sectionIcon}>{sec.icon}</span>
                     <h3 style={{...S.sectionLabel,color:sec.color}}>{sec.label}</h3>
                   </div>
                   <p style={S.sectionPrompt}>{sec.prompt}</p>
@@ -321,9 +283,9 @@ export default function JournalPage() {
               <p style={S.passageDate}>{formatDate(viewingEntry.entry_date)}</p>
               <div style={S.passageTitleRow}>
                 <h2 style={S.passageTitle}>{viewingEntry.passage}</h2>
-                {BIBLE_COM_URLS[viewingEntry.passage] && (
-                  <a href={BIBLE_COM_URLS[viewingEntry.passage]} target="_blank" rel="noopener noreferrer" style={S.bibleBtn}>
-                    📖 Read on Bible.com
+                <a href={inviteSmsUrl} style={S.inviteBtn}>
+                  ✉️ Invite a Friend
+                </a>
                   </a>
                 )}
               </div>
@@ -332,6 +294,7 @@ export default function JournalPage() {
               {SECTIONS.map(sec=>(
                 <div key={sec.key} style={S.card}>
                   <div style={{...S.sectionHeader,borderLeftColor:sec.color}}>
+                    <span style={S.sectionIcon}>{sec.icon}</span>
                     <h3 style={{...S.sectionLabel,color:sec.color}}>{sec.label}</h3>
                   </div>
                   <p style={S.readonlyText}>{viewingEntry[sec.key]||<em style={{color:'#bbb'}}>Not filled in</em>}</p>
