@@ -186,7 +186,7 @@ export default function JournalPage() {
     <div style={S.page}>
       <header style={S.header}>
         <div style={S.headerLeft}>
-  <img src="/logo.png" alt="PCBC Dwell Journal" style={{ height: '36px', width: 'auto' }} />
+  <img src="/logo-white.png" alt="PCBC Dwell Journal" style={{ height: '60px', width: 'auto' }} />
 </div>
         <div style={S.headerRight}>
           <span style={S.headerGreeting}>{firstName ? `Hi, ${firstName}` : ''}</span>
