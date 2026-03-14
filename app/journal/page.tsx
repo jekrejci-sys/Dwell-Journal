@@ -169,7 +169,7 @@ export default function JournalPage() {
 
   // ── ESV API key — stored in supabase.ts ───────────────────────────────────
   // Import it here so it stays out of env files (which disappear in StackBlitz)
-  const ESV_KEY = '3992bfa55cb535a76c737b04a8c3c8098a46eef3'
+  const ESV_KEY = '1f864b55276267b1bc4958e3de072c281f10fe12'
 
   const loadData = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -231,7 +231,9 @@ export default function JournalPage() {
   return (
     <div style={S.page}>
       <header style={S.header}>
-        <div style={S.headerLeft}><span style={S.headerLogo}>dwell</span><span style={S.headerLogoSub}>journal</span></div>
+        <div style={S.headerLeft}>
+  <img src="/logo.png" alt="PCBC Dwell Journal" style={{ height: '36px', width: 'auto' }} />
+</div>
         <div style={S.headerRight}>
           <span style={S.headerGreeting}>{firstName ? `Hi, ${firstName}` : ''}</span>
           <button onClick={handleSignOut} style={S.signOutBtn}>Sign Out</button>
