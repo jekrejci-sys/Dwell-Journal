@@ -9,6 +9,35 @@ type JournalEntry = {
   scripture: string; hear: string; obey: string; tell: string; created_at: string
 }
 
+// ── ESV API fetch ─────────────────────────────────────────────────────────────
+// Uses the free Crossway ESV API. Key lives in lib/supabase.ts as ESV_API_KEY.
+async function fetchESVText(passage: string, apiKey: string): Promise<string> {
+  if (!passage || passage === 'No passage scheduled today') return ''
+  try {
+    const url = `https://api.esv.org/v3/passage/text/?q=${encodeURIComponent(passage)}`
+      + `&include-headings=false&include-footnotes=false&include-verse-numbers=true`
+      + `&include-short-copyright=false&include-passage-references=false`
+    const res = await fetch(url, { headers: { Authorization: `Token ${apiKey}` } })
+    if (!res.ok) return `Could not load scripture (error ${res.status}).`
+    const data = await res.json()
+    const text: string = (data.passages ?? [])[0] ?? ''
+    return text.trim()
+  } catch {
+    return 'Could not load scripture. Check your internet connection.'
+  }
+}
+
+const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
+const formatDate = (d: string) => new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})
+
+const SECTIONS = [
+  {key:'scripture' as const,label:'SCRIPTURE',color:'#2D4F9E',icon:'📖',prompt:"Write out 2–3 verses that stood out to you from today's reading."},
+  {key:'hear'      as const,label:'HEAR',     color:'#B8933A',icon:'👂',prompt:'What do you hear God saying to you through these verses?'},
+  {key:'obey'      as const,label:'OBEY',     color:'#2D4F9E',icon:'🙏',prompt:'How can you be obedient to what God is telling you today?'},
+  {key:'tell'      as const,label:'TELL',     color:'#B8933A',icon:'💬',prompt:'Who do you know that might need this word of encouragement today?'},
+]
+
+// Reading plan — still hardcoded as fallback; Supabase table overrides when populated
 const READING_PLAN: Record<string, string> = {
   '2026-01-01':'1 Kings 1','2026-01-02':'Psalm 55','2026-01-05':'1 Kings 2',
   '2026-01-06':'1 Kings 3','2026-01-07':'1 Kings 4','2026-01-08':'1 Kings 5',
@@ -33,54 +62,41 @@ const READING_PLAN: Record<string, string> = {
   '2026-03-26':'2 Thessalonians 3','2026-03-27':'Psalm 67',
 }
 
-// ── Build a Bible.com URL for any passage ─────────────────────────────────────
-// Bible.com uses numeric book/chapter IDs. We map each passage to its URL.
-// The version 111 = NIV, but we use NLT = 116 on Bible.com.
-const BIBLE_COM_URLS: Record<string, string> = {
-  '1 Kings 1':'https://www.bible.com/bible/116/1KI.1','1 Kings 2':'https://www.bible.com/bible/116/1KI.2',
-  '1 Kings 3':'https://www.bible.com/bible/116/1KI.3','1 Kings 4':'https://www.bible.com/bible/116/1KI.4',
-  '1 Kings 5':'https://www.bible.com/bible/116/1KI.5','1 Kings 6':'https://www.bible.com/bible/116/1KI.6',
-  '1 Kings 7':'https://www.bible.com/bible/116/1KI.7','1 Kings 8':'https://www.bible.com/bible/116/1KI.8',
-  '1 Kings 9':'https://www.bible.com/bible/116/1KI.9','1 Kings 10':'https://www.bible.com/bible/116/1KI.10',
-  '1 Kings 11':'https://www.bible.com/bible/116/1KI.11','1 Kings 12':'https://www.bible.com/bible/116/1KI.12',
-  '1 Kings 13':'https://www.bible.com/bible/116/1KI.13','1 Kings 14':'https://www.bible.com/bible/116/1KI.14',
-  '1 Kings 15':'https://www.bible.com/bible/116/1KI.15','1 Kings 16':'https://www.bible.com/bible/116/1KI.16',
-  '1 Kings 17':'https://www.bible.com/bible/116/1KI.17','1 Kings 18':'https://www.bible.com/bible/116/1KI.18',
-  '1 Kings 19':'https://www.bible.com/bible/116/1KI.19','1 Kings 20':'https://www.bible.com/bible/116/1KI.20',
-  '1 Kings 21':'https://www.bible.com/bible/116/1KI.21','1 Kings 22':'https://www.bible.com/bible/116/1KI.22',
-  'Psalm 55':'https://www.bible.com/bible/116/PSA.55','Psalm 56':'https://www.bible.com/bible/116/PSA.56',
-  'Psalm 57':'https://www.bible.com/bible/116/PSA.57','Psalm 58':'https://www.bible.com/bible/116/PSA.58',
-  'Psalm 59':'https://www.bible.com/bible/116/PSA.59','Psalm 60':'https://www.bible.com/bible/116/PSA.60',
-  'Psalm 61':'https://www.bible.com/bible/116/PSA.61','Psalm 62':'https://www.bible.com/bible/116/PSA.62',
-  'Psalm 63':'https://www.bible.com/bible/116/PSA.63','Psalm 64':'https://www.bible.com/bible/116/PSA.64',
-  'Psalm 65':'https://www.bible.com/bible/116/PSA.65','Psalm 66':'https://www.bible.com/bible/116/PSA.66',
-  'Psalm 67':'https://www.bible.com/bible/116/PSA.67',
-  'Song of Solomon 1':'https://www.bible.com/bible/116/SNG.1','Song of Solomon 2':'https://www.bible.com/bible/116/SNG.2',
-  'Song of Solomon 3':'https://www.bible.com/bible/116/SNG.3','Song of Solomon 4':'https://www.bible.com/bible/116/SNG.4',
-  'Song of Solomon 5':'https://www.bible.com/bible/116/SNG.5','Song of Solomon 6':'https://www.bible.com/bible/116/SNG.6',
-  'Song of Solomon 7':'https://www.bible.com/bible/116/SNG.7','Song of Solomon 8':'https://www.bible.com/bible/116/SNG.8',
-  'Romans 1':'https://www.bible.com/bible/116/ROM.1','Romans 2':'https://www.bible.com/bible/116/ROM.2',
-  'Romans 3':'https://www.bible.com/bible/116/ROM.3','Romans 4':'https://www.bible.com/bible/116/ROM.4',
-  'Romans 5':'https://www.bible.com/bible/116/ROM.5','Romans 6':'https://www.bible.com/bible/116/ROM.6',
-  'Romans 7':'https://www.bible.com/bible/116/ROM.7','Romans 8':'https://www.bible.com/bible/116/ROM.8',
-  'Romans 9':'https://www.bible.com/bible/116/ROM.9','Romans 10':'https://www.bible.com/bible/116/ROM.10',
-  'Romans 11':'https://www.bible.com/bible/116/ROM.11','Romans 12':'https://www.bible.com/bible/116/ROM.12',
-  'Romans 13':'https://www.bible.com/bible/116/ROM.13','Romans 14':'https://www.bible.com/bible/116/ROM.14',
-  'Romans 15':'https://www.bible.com/bible/116/ROM.15','Romans 16':'https://www.bible.com/bible/116/ROM.16',
-  '2 Thessalonians 1':'https://www.bible.com/bible/116/2TH.1',
-  '2 Thessalonians 2':'https://www.bible.com/bible/116/2TH.2',
-  '2 Thessalonians 3':'https://www.bible.com/bible/116/2TH.3',
+const BIBLE_COM_URLS: Record<string,string> = {
+  '1 Kings 1':'https://www.bible.com/bible/59/1KI.1','1 Kings 2':'https://www.bible.com/bible/59/1KI.2',
+  '1 Kings 3':'https://www.bible.com/bible/59/1KI.3','1 Kings 4':'https://www.bible.com/bible/59/1KI.4',
+  '1 Kings 5':'https://www.bible.com/bible/59/1KI.5','1 Kings 6':'https://www.bible.com/bible/59/1KI.6',
+  '1 Kings 7':'https://www.bible.com/bible/59/1KI.7','1 Kings 8':'https://www.bible.com/bible/59/1KI.8',
+  '1 Kings 9':'https://www.bible.com/bible/59/1KI.9','1 Kings 10':'https://www.bible.com/bible/59/1KI.10',
+  '1 Kings 11':'https://www.bible.com/bible/59/1KI.11','1 Kings 12':'https://www.bible.com/bible/59/1KI.12',
+  '1 Kings 13':'https://www.bible.com/bible/59/1KI.13','1 Kings 14':'https://www.bible.com/bible/59/1KI.14',
+  '1 Kings 15':'https://www.bible.com/bible/59/1KI.15','1 Kings 16':'https://www.bible.com/bible/59/1KI.16',
+  '1 Kings 17':'https://www.bible.com/bible/59/1KI.17','1 Kings 18':'https://www.bible.com/bible/59/1KI.18',
+  '1 Kings 19':'https://www.bible.com/bible/59/1KI.19','1 Kings 20':'https://www.bible.com/bible/59/1KI.20',
+  '1 Kings 21':'https://www.bible.com/bible/59/1KI.21','1 Kings 22':'https://www.bible.com/bible/59/1KI.22',
+  'Psalm 55':'https://www.bible.com/bible/59/PSA.55','Psalm 56':'https://www.bible.com/bible/59/PSA.56',
+  'Psalm 57':'https://www.bible.com/bible/59/PSA.57','Psalm 58':'https://www.bible.com/bible/59/PSA.58',
+  'Psalm 59':'https://www.bible.com/bible/59/PSA.59','Psalm 60':'https://www.bible.com/bible/59/PSA.60',
+  'Psalm 61':'https://www.bible.com/bible/59/PSA.61','Psalm 62':'https://www.bible.com/bible/59/PSA.62',
+  'Psalm 63':'https://www.bible.com/bible/59/PSA.63','Psalm 64':'https://www.bible.com/bible/59/PSA.64',
+  'Psalm 65':'https://www.bible.com/bible/59/PSA.65','Psalm 66':'https://www.bible.com/bible/59/PSA.66',
+  'Psalm 67':'https://www.bible.com/bible/59/PSA.67',
+  'Song of Solomon 1':'https://www.bible.com/bible/59/SNG.1','Song of Solomon 2':'https://www.bible.com/bible/59/SNG.2',
+  'Song of Solomon 3':'https://www.bible.com/bible/59/SNG.3','Song of Solomon 4':'https://www.bible.com/bible/59/SNG.4',
+  'Song of Solomon 5':'https://www.bible.com/bible/59/SNG.5','Song of Solomon 6':'https://www.bible.com/bible/59/SNG.6',
+  'Song of Solomon 7':'https://www.bible.com/bible/59/SNG.7','Song of Solomon 8':'https://www.bible.com/bible/59/SNG.8',
+  'Romans 1':'https://www.bible.com/bible/59/ROM.1','Romans 2':'https://www.bible.com/bible/59/ROM.2',
+  'Romans 3':'https://www.bible.com/bible/59/ROM.3','Romans 4':'https://www.bible.com/bible/59/ROM.4',
+  'Romans 5':'https://www.bible.com/bible/59/ROM.5','Romans 6':'https://www.bible.com/bible/59/ROM.6',
+  'Romans 7':'https://www.bible.com/bible/59/ROM.7','Romans 8':'https://www.bible.com/bible/59/ROM.8',
+  'Romans 9':'https://www.bible.com/bible/59/ROM.9','Romans 10':'https://www.bible.com/bible/59/ROM.10',
+  'Romans 11':'https://www.bible.com/bible/59/ROM.11','Romans 12':'https://www.bible.com/bible/59/ROM.12',
+  'Romans 13':'https://www.bible.com/bible/59/ROM.13','Romans 14':'https://www.bible.com/bible/59/ROM.14',
+  'Romans 15':'https://www.bible.com/bible/59/ROM.15','Romans 16':'https://www.bible.com/bible/59/ROM.16',
+  '2 Thessalonians 1':'https://www.bible.com/bible/59/2TH.1',
+  '2 Thessalonians 2':'https://www.bible.com/bible/59/2TH.2',
+  '2 Thessalonians 3':'https://www.bible.com/bible/59/2TH.3',
 }
-
-const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
-const formatDate = (d: string) => new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})
-
-const SECTIONS = [
-  {key:'scripture' as const,label:'SCRIPTURE',color:'#2D4F9E',icon:'📖',prompt:"Write out 2–3 verses that stood out to you from today's reading."},
-  {key:'hear'      as const,label:'HEAR',     color:'#B8933A',icon:'👂',prompt:'What do you hear God saying to you through these verses?'},
-  {key:'obey'      as const,label:'OBEY',     color:'#2D4F9E',icon:'🙏',prompt:'How can you be obedient to what God is telling you today?'},
-  {key:'tell'      as const,label:'TELL',     color:'#B8933A',icon:'💬',prompt:'Who do you know that might need this word of encouragement today?'},
-]
 
 const BLUE='#2D4F9E', GOLD='#B8933A', CREAM='#FAF7F2', WHITE='#FFFFFF'
 
@@ -99,19 +115,15 @@ const S: Record<string,React.CSSProperties> = {
   tab:{background:'none',border:'none',borderBottom:'3px solid transparent',padding:'14px 20px',fontSize:'13px',color:'#999',cursor:'pointer',fontFamily:"'Georgia',serif"},
   tabActive:{color:BLUE,borderBottomColor:GOLD},
   main:{maxWidth:'900px',margin:'0 auto',padding:'24px 16px 80px'},
-  passageBanner:{background:BLUE,borderRadius:'6px',padding:'28px 32px',marginBottom:'28px',color:'#fff'},
+  passageBanner:{background:BLUE,borderRadius:'6px 6px 0 0',padding:'28px 32px 20px',color:'#fff'},
   passageDate:{fontSize:'12px',letterSpacing:'2px',textTransform:'uppercase',color:'rgba(255,255,255,0.65)',margin:'0 0 8px'},
   passageTitleRow:{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'16px'},
   passageTitle:{fontSize:'28px',fontWeight:'400',margin:'0',fontStyle:'italic'},
-  // Bible.com button — sits inside the blue banner next to the passage title
-  bibleBtn:{
-    display:'inline-flex',alignItems:'center',gap:'8px',
-    background:'rgba(255,255,255,0.15)',border:'1px solid rgba(255,255,255,0.35)',
-    color:'#fff',borderRadius:'4px',padding:'10px 18px',
-    fontSize:'13px',letterSpacing:'1px',fontFamily:"'Georgia',serif",
-    cursor:'pointer',textDecoration:'none',whiteSpace:'nowrap',
-    transition:'background 0.2s',
-  },
+  bibleBtn:{display:'inline-flex',alignItems:'center',gap:'8px',background:'rgba(255,255,255,0.15)',border:'1px solid rgba(255,255,255,0.35)',color:'#fff',borderRadius:'4px',padding:'10px 18px',fontSize:'13px',fontFamily:"'Georgia',serif",cursor:'pointer',textDecoration:'none',whiteSpace:'nowrap'},
+  esvCard:{background:'#FFFEF9',border:'1px solid #E8E0D4',borderTop:'none',borderRadius:'0 0 6px 6px',padding:'24px 32px',marginBottom:'28px',boxShadow:'0 2px 8px rgba(0,0,0,0.04)'},
+  esvBadge:{background:GOLD,color:WHITE,fontSize:'10px',letterSpacing:'2px',padding:'3px 10px',borderRadius:'20px',textTransform:'uppercase',fontFamily:"'Georgia',serif",display:'inline-block',marginBottom:'16px'},
+  esvText:{fontSize:'15px',lineHeight:'2',color:'#2A2A2A',whiteSpace:'pre-wrap',fontFamily:"'Georgia',serif",margin:'0'},
+  esvLoading:{color:'#AAA',fontStyle:'italic',fontSize:'14px',margin:'0'},
   grid:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(min(380px,100%),1fr))',gap:'20px',marginBottom:'28px',justifyItems:'stretch'},
   card:{background:'#fff',borderRadius:'6px',padding:'24px',boxShadow:'0 2px 8px rgba(0,0,0,0.06)',border:'1px solid #EDE8E0'},
   sectionHeader:{display:'flex',alignItems:'center',gap:'10px',borderLeft:'4px solid',paddingLeft:'12px',marginBottom:'10px'},
@@ -136,10 +148,11 @@ const S: Record<string,React.CSSProperties> = {
 }
 
 export default function JournalPage() {
-  const supabase = createClient()
-  const router   = useRouter()
-  const [today]  = useState(todayStr())
-  const [passage, setPassage]     = useState(READING_PLAN[todayStr()] ?? 'No passage scheduled today')
+  const supabase  = createClient()
+  const router    = useRouter()
+  const [today]   = useState(todayStr())
+  const [passage, setPassage]   = useState(READING_PLAN[todayStr()] ?? 'No passage scheduled today')
+  const [bibleUrl, setBibleUrl] = useState(BIBLE_COM_URLS[todayStr()] ?? '')
   const [scripture, setScripture] = useState('')
   const [hear, setHear]           = useState('')
   const [obey, setObey]           = useState('')
@@ -149,22 +162,53 @@ export default function JournalPage() {
   const [pastEntries, setPastEntries]   = useState<JournalEntry[]>([])
   const [viewingEntry, setViewingEntry] = useState<JournalEntry | null>(null)
   const [firstName, setFirstName] = useState('')
-  const [tab, setTab]   = useState<'write'|'history'>('write')
+  const [tab, setTab]     = useState<'write'|'history'>('write')
   const [loading, setLoading]     = useState(true)
+  const [esvText, setEsvText]     = useState('')
+  const [esvLoading, setEsvLoading] = useState(true)
+
+  // ── ESV API key — stored in supabase.ts ───────────────────────────────────
+  // Import it here so it stays out of env files (which disappear in StackBlitz)
+  const ESV_KEY = '3992bfa55cb535a76c737b04a8c3c8098a46eef3'
 
   const loadData = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { router.push('/login'); return }
     const meta = session.user.user_metadata ?? {}
     setFirstName(meta.first_name ?? '')
+
+    // Check Supabase reading_plan table first (overrides hardcoded plan)
+    const { data: plan } = await supabase
+      .from('reading_plan')
+      .select('passage, bible_url')
+      .eq('entry_date', today)
+      .single()
+    if (plan?.passage) {
+      setPassage(plan.passage)
+      setBibleUrl(plan.bible_url ?? BIBLE_COM_URLS[plan.passage] ?? '')
+    }
+
+    // Load today's journal entry if it exists
     const { data: ex } = await supabase.from('journal_entries').select('*').eq('entry_date',today).eq('user_id',session.user.id).single()
     if (ex) { setScripture(ex.scripture??''); setHear(ex.hear??''); setObey(ex.obey??''); setTell(ex.tell??''); if(ex.passage) setPassage(ex.passage) }
+
+    // Load all past entries
     const { data: all } = await supabase.from('journal_entries').select('*').eq('user_id',session.user.id).order('entry_date',{ascending:false})
     setPastEntries(all??[])
     setLoading(false)
   }, [supabase, router, today])
 
   useEffect(() => { loadData() }, [loadData])
+
+  // Fetch ESV text whenever passage changes
+  useEffect(() => {
+    setEsvLoading(true)
+    setEsvText('')
+    fetchESVText(passage, ESV_KEY).then(text => {
+      setEsvText(text)
+      setEsvLoading(false)
+    })
+  }, [passage])
 
   async function handleSignOut() { await supabase.auth.signOut(); router.push('/login') }
 
@@ -182,12 +226,12 @@ export default function JournalPage() {
 
   if (loading) return <div style={S.loadingPage}><p style={S.loadingText}>Opening your journal…</p></div>
 
+  const activeBibleUrl = bibleUrl || BIBLE_COM_URLS[passage] || ''
+
   return (
     <div style={S.page}>
       <header style={S.header}>
-        <div style={S.headerLeft}>
-  <img src="/logo-white.png" alt="PCBC Dwell Journal" style={{ height: '60px', width: 'auto' }} />
-</div>
+        <div style={S.headerLeft}><span style={S.headerLogo}>dwell</span><span style={S.headerLogoSub}>journal</span></div>
         <div style={S.headerRight}>
           <span style={S.headerGreeting}>{firstName ? `Hi, ${firstName}` : ''}</span>
           <button onClick={handleSignOut} style={S.signOutBtn}>Sign Out</button>
@@ -200,25 +244,28 @@ export default function JournalPage() {
       </div>
 
       <main style={S.main}>
-
         {tab==='write' && (
           <div>
-            {/* Blue passage banner with Bible.com button */}
+            {/* Blue passage banner */}
             <div style={S.passageBanner}>
               <p style={S.passageDate}>{formatDate(today)}</p>
               <div style={S.passageTitleRow}>
                 <h2 style={S.passageTitle}>{passage}</h2>
-                {BIBLE_COM_URLS[passage] && (
-                  <a
-                    href={BIBLE_COM_URLS[passage]}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={S.bibleBtn}
-                  >
+                {activeBibleUrl && (
+                  <a href={activeBibleUrl} target="_blank" rel="noopener noreferrer" style={S.bibleBtn}>
                     📖 Read on Bible.com
                   </a>
                 )}
               </div>
+            </div>
+
+            {/* ESV text card — attached directly below banner */}
+            <div style={S.esvCard}>
+              <span style={S.esvBadge}>English Standard Version</span>
+              {esvLoading
+                ? <p style={S.esvLoading}>Loading scripture…</p>
+                : <p style={S.esvText}>{esvText}</p>
+              }
             </div>
 
             {/* 4 Journal sections */}
@@ -269,7 +316,7 @@ export default function JournalPage() {
         {tab==='history' && viewingEntry && (
           <div>
             <button onClick={()=>setViewingEntry(null)} style={S.backBtn}>← Back to entries</button>
-            <div style={S.passageBanner}>
+            <div style={{...S.passageBanner,borderRadius:'6px'}}>
               <p style={S.passageDate}>{formatDate(viewingEntry.entry_date)}</p>
               <div style={S.passageTitleRow}>
                 <h2 style={S.passageTitle}>{viewingEntry.passage}</h2>
