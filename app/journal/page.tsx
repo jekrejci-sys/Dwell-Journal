@@ -59,10 +59,10 @@ const READING_PLAN: Record<string,string> = {
 }
 
 const SECTIONS = [
-  {key:'scripture' as const,label:'SCRIPTURE',color:'#2D4F9E',icon:'📖',prompt:"Write out 2-3 verses that stood out to you from today's reading."},
-  {key:'hear'      as const,label:'HEAR',     color:'#B8933A',icon:'👂',prompt:'What do you hear God saying to you through these verses?'},
-  {key:'obey'      as const,label:'OBEY',     color:'#2D4F9E',icon:'🙏',prompt:'How can you be obedient to what God is telling you today?'},
-  {key:'tell'      as const,label:'TELL',     color:'#B8933A',icon:'💬',prompt:'Who do you know that might need this word of encouragement today?'},
+  {key:'scripture' as const,label:'SCRIPTURE',color:'#2D4F9E',icon:'',prompt:"Write out 2-3 verses that stood out to you from today's reading."},
+  {key:'hear'      as const,label:'HEAR',     color:'#B8933A',icon:'',prompt:'What do you hear God saying to you through these verses?'},
+  {key:'obey'      as const,label:'OBEY',     color:'#2D4F9E',icon:'',prompt:'How can you be obedient to what God is telling you today?'},
+  {key:'tell'      as const,label:'TELL',     color:'#B8933A',icon:'',prompt:'Who do you know that might need this word of encouragement today?'},
 ]
 
 // ── Constants — update these if your domain or ESV key changes ────────────────
@@ -245,7 +245,7 @@ export default function JournalPage() {
               <div style={S.passageTitleRow}>
                 <h2 style={S.passageTitle}>{passage}</h2>
                 <a href={INVITE_URL} target="_blank" rel="noopener noreferrer" style={S.inviteBtn}>
-                  ✉️ Invite a Friend
+                 ✉️ Invite a Friend
                 </a>
               </div>
             </div>
@@ -264,7 +264,7 @@ export default function JournalPage() {
               {SECTIONS.map(sec => (
                 <div key={sec.key} style={S.card}>
                   <div style={{...S.sectionHeader, borderLeftColor: sec.color}}>
-                    <span style={S.sectionIcon}>{sec.icon}</span>
+                    
                     <h3 style={{...S.sectionLabel, color: sec.color}}>{sec.label}</h3>
                   </div>
                   <p style={S.sectionPrompt}>{sec.prompt}</p>
@@ -331,7 +331,7 @@ export default function JournalPage() {
               <div style={S.passageTitleRow}>
                 <h2 style={S.passageTitle}>{viewingEntry.passage}</h2>
                 <a href={INVITE_URL} target="_blank" rel="noopener noreferrer" style={S.inviteBtn}>
-                  ✉️ Invite a Friend
+                 ✉️ Invite a Friend
                 </a>
               </div>
             </div>
@@ -339,7 +339,7 @@ export default function JournalPage() {
               {SECTIONS.map(sec => (
                 <div key={sec.key} style={S.card}>
                   <div style={{...S.sectionHeader, borderLeftColor: sec.color}}>
-                    <span style={S.sectionIcon}>{sec.icon}</span>
+                    
                     <h3 style={{...S.sectionLabel, color: sec.color}}>{sec.label}</h3>
                   </div>
                   <p style={S.readonlyText}>
