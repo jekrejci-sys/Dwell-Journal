@@ -33,6 +33,9 @@ const todayStr = () => {
 const formatDate = (d: string) =>
   new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})
 
+// Returns true if the given date string falls on a Sunday
+const isSunday = (dateStr: string) => new Date(dateStr + 'T12:00:00').getDay() === 0
+
 // ── Fallback reading plan ─────────────────────────────────────────────────────
 const READING_PLAN: Record<string,string> = {
   '2026-01-01':'1 Kings 1','2026-01-02':'Psalm 55','2026-01-05':'1 Kings 2',
@@ -59,14 +62,19 @@ const READING_PLAN: Record<string,string> = {
 }
 
 const SECTIONS = [
-  {key:'scripture' as const,label:'SCRIPTURE',color:'#2D4F9E',icon:'',prompt:"Write out 2-3 verses that stood out to you from today's reading."},
-  {key:'hear'      as const,label:'HEAR',     color:'#B8933A',icon:'',prompt:'What do you hear God saying to you through these verses?'},
-  {key:'obey'      as const,label:'OBEY',     color:'#2D4F9E',icon:'',prompt:'How can you be obedient to what God is telling you today?'},
-  {key:'tell'      as const,label:'TELL',     color:'#B8933A',icon:'',prompt:'Who do you know that might need this word of encouragement today?'},
+  {key:'scripture' as const,label:'SCRIPTURE',color:'#2D4F9E',prompt:"Write out 2-3 verses that stood out to you from today's reading."},
+  {key:'hear'      as const,label:'HEAR',     color:'#B8933A',prompt:'What do you hear God saying to you through these verses?'},
+  {key:'obey'      as const,label:'OBEY',     color:'#2D4F9E',prompt:'How can you be obedient to what God is telling you today?'},
+  {key:'tell'      as const,label:'TELL',     color:'#B8933A',prompt:'Who do you know that might need this word of encouragement today?'},
 ]
 
-// ── Constants — update these if your domain or ESV key changes ────────────────
-const ESV_KEY = '3992bfa55cb535a76c737b04a8c3c8098a46eef3'
+// Sunday fields map to existing DB columns — no schema changes needed:
+//   scripture → Scripture Passage (the Bible reference e.g. "Romans 8")
+//   hear      → Minister name
+//   obey      → Sermon Title
+//   tell      → Sermon Notes (the big open text area)
+
+const ESV_KEY  = '3992bfa55cb535a76c737b04a8c3c8098a46eef3'
 const INVITE_URL = 'https://community.poweredbytext.com/go-sms/?to=&msg=Hey!%20I%27ve%20been%20using%20the%20PCBC%20Dwell%20Journal%20app%20for%20my%20daily%20Bible%20reading.%20I%20think%20you%27d%20love%20it!%20Sign%20up%20here%3A%20https%3A%2F%2Fdwell-journal.vercel.app'
 
 const BLUE='#2D4F9E', GOLD='#B8933A', CREAM='#FAF7F2', WHITE='#FFFFFF'
@@ -77,8 +85,6 @@ const S: Record<string,React.CSSProperties> = {
   page:{minHeight:'100vh',background:CREAM,fontFamily:"'Georgia','Times New Roman',serif"},
   header:{background:BLUE,padding:'14px 32px',display:'flex',alignItems:'center',justifyContent:'space-between',boxShadow:'0 2px 12px rgba(0,0,0,0.2)'},
   headerLeft:{display:'flex',alignItems:'center',gap:'8px'},
-  headerLogo:{color:'#fff',fontSize:'22px',fontStyle:'italic',letterSpacing:'1px'},
-  headerLogoSub:{color:GOLD,fontSize:'11px',letterSpacing:'4px',textTransform:'uppercase'},
   headerRight:{display:'flex',alignItems:'center',gap:'16px'},
   headerGreeting:{color:'rgba(255,255,255,0.65)',fontSize:'12px'},
   signOutBtn:{background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.25)',color:'#fff',padding:'6px 14px',borderRadius:'3px',cursor:'pointer',fontSize:'12px',fontFamily:"'Georgia',serif"},
@@ -86,22 +92,40 @@ const S: Record<string,React.CSSProperties> = {
   tab:{background:'none',border:'none',borderBottom:'3px solid transparent',padding:'14px 20px',fontSize:'13px',color:'#999',cursor:'pointer',fontFamily:"'Georgia',serif"},
   tabActive:{color:BLUE,borderBottomColor:GOLD},
   main:{maxWidth:'900px',margin:'0 auto',padding:'24px 16px 80px'},
+
+  // Standard weekday banner (rounded top only — ESV card attaches below)
   passageBanner:{background:BLUE,borderRadius:'6px 6px 0 0',padding:'28px 32px 20px',color:'#fff'},
+  // Sunday banner (fully rounded — no card below)
+  sundayBanner:{background:BLUE,borderRadius:'6px',padding:'28px 32px 24px',marginBottom:'28px',color:'#fff'},
   passageDate:{fontSize:'12px',letterSpacing:'2px',textTransform:'uppercase',color:'rgba(255,255,255,0.65)',margin:'0 0 8px'},
   passageTitleRow:{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'16px'},
   passageTitle:{fontSize:'28px',fontWeight:'400',margin:'0',fontStyle:'italic'},
   inviteBtn:{display:'inline-flex',alignItems:'center',gap:'8px',background:'rgba(255,255,255,0.15)',border:'1px solid rgba(255,255,255,0.35)',color:'#fff',borderRadius:'4px',padding:'10px 18px',fontSize:'13px',fontFamily:"'Georgia',serif",cursor:'pointer',textDecoration:'none',whiteSpace:'nowrap'},
+
+  // ESV card
   esvCard:{background:'#FFFEF9',border:'1px solid #E8E0D4',borderTop:'none',borderRadius:'0 0 6px 6px',padding:'24px 32px',marginBottom:'28px',boxShadow:'0 2px 8px rgba(0,0,0,0.04)'},
   esvBadge:{background:GOLD,color:WHITE,fontSize:'10px',letterSpacing:'2px',padding:'3px 10px',borderRadius:'20px',textTransform:'uppercase',fontFamily:"'Georgia',serif",display:'inline-block',marginBottom:'16px'},
   esvText:{fontSize:'15px',lineHeight:'2',color:'#2A2A2A',whiteSpace:'pre-wrap',fontFamily:"'Georgia',serif",margin:'0'},
   esvLoading:{color:'#AAA',fontStyle:'italic',fontSize:'14px',margin:'0'},
+
+  // Weekday journal sections
   grid:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(min(380px,100%),1fr))',gap:'20px',marginBottom:'28px',justifyItems:'stretch'},
   card:{background:'#fff',borderRadius:'6px',padding:'24px',boxShadow:'0 2px 8px rgba(0,0,0,0.06)',border:'1px solid #EDE8E0'},
   sectionHeader:{display:'flex',alignItems:'center',gap:'10px',borderLeft:'4px solid',paddingLeft:'12px',marginBottom:'10px'},
-  sectionIcon:{fontSize:'18px'},
   sectionLabel:{fontSize:'13px',letterSpacing:'3px',fontWeight:'700',margin:'0',fontFamily:"'Georgia',serif"},
   sectionPrompt:{fontSize:'13px',color:'#888',margin:'0 0 14px',fontStyle:'italic',lineHeight:'1.6'},
   textarea:{width:'100%',border:'1px solid #E8E0D4',borderRadius:'4px',padding:'12px',fontSize:'15px',fontFamily:"'Georgia',serif",color:'#2A2A2A',lineHeight:'1.7',resize:'vertical',background:'#FDFBF8',outline:'none',boxSizing:'border-box'},
+
+  // Sunday-specific styles
+  sundayBanner:{background:BLUE,borderRadius:'6px',padding:'28px 32px',marginBottom:'0',color:'#fff'},
+  sundayCard:{background:'#fff',borderRadius:'6px',padding:'28px 32px',boxShadow:'0 2px 8px rgba(0,0,0,0.06)',border:'1px solid #EDE8E0',marginBottom:'20px'},
+  sundaySectionLabel:{fontSize:'11px',letterSpacing:'3px',textTransform:'uppercase',color:GOLD,fontFamily:"'Georgia',serif",fontWeight:'700',marginBottom:'12px',display:'block'},
+  sundayFieldRow:{display:'flex',gap:'24px',marginBottom:'20px',flexWrap:'wrap'},
+  sundayField:{display:'flex',flexDirection:'column',gap:'6px',flex:'1',minWidth:'160px'},
+  sundayFieldLabel:{fontSize:'11px',color:'#AAA',letterSpacing:'1px',fontFamily:"'Georgia',serif"},
+  sundayInput:{border:'none',borderBottom:'1.5px solid #E8E0D4',padding:'8px 4px',fontSize:'15px',background:'transparent',color:'#2A2A2A',outline:'none',fontFamily:"'Georgia',serif",width:'100%',boxSizing:'border-box'},
+  sundayNotesArea:{width:'100%',border:'1px solid #E8E0D4',borderRadius:'4px',padding:'16px',fontSize:'15px',fontFamily:"'Georgia',serif",color:'#2A2A2A',lineHeight:'1.8',resize:'vertical',background:'#FDFBF8',outline:'none',boxSizing:'border-box',minHeight:'320px'},
+
   readonlyText:{fontSize:'15px',lineHeight:'1.8',color:'#333',whiteSpace:'pre-wrap',margin:'0'},
   saveRow:{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:'16px'},
   savedBadge:{background:'#e8f5e9',color:'#2e7d32',border:'1px solid #c8e6c9',borderRadius:'4px',padding:'8px 14px',fontSize:'13px',fontFamily:"'Georgia',serif"},
@@ -123,11 +147,18 @@ export default function JournalPage() {
   const supabase = createClient()
   const router   = useRouter()
   const [today]  = useState(todayStr())
+
+  // Weekday fields
   const [passage, setPassage]     = useState(READING_PLAN[todayStr()] ?? 'No passage scheduled today')
   const [scripture, setScripture] = useState('')
   const [hear, setHear]           = useState('')
   const [obey, setObey]           = useState('')
   const [tell, setTell]           = useState('')
+
+  // ESV
+  const [esvText, setEsvText]       = useState('')
+  const [esvLoading, setEsvLoading] = useState(true)
+
   const [saving, setSaving]       = useState(false)
   const [saved, setSaved]         = useState(false)
   const [pastEntries, setPastEntries]   = useState<JournalEntry[]>([])
@@ -135,24 +166,19 @@ export default function JournalPage() {
   const [firstName, setFirstName] = useState('')
   const [tab, setTab]             = useState<'write'|'history'>('write')
   const [loading, setLoading]     = useState(true)
-  const [esvText, setEsvText]     = useState('')
-  const [esvLoading, setEsvLoading] = useState(true)
 
   const loadData = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { router.push('/login'); return }
-    const meta = session.user.user_metadata ?? {}
-    setFirstName(meta.first_name ?? '')
+    setFirstName(session.user.user_metadata?.first_name ?? '')
 
-    // Check Supabase reading_plan table (overrides hardcoded plan when populated)
+    // Check Supabase reading_plan table first
     const { data: plan } = await supabase
-      .from('reading_plan')
-      .select('passage')
-      .eq('entry_date', today)
-      .single()
+      .from('reading_plan').select('passage')
+      .eq('entry_date', today).single()
     if (plan?.passage) setPassage(plan.passage)
 
-    // Load today's journal entry
+    // Load today's saved entry
     const { data: ex } = await supabase
       .from('journal_entries').select('*')
       .eq('entry_date', today).eq('user_id', session.user.id).single()
@@ -164,7 +190,6 @@ export default function JournalPage() {
       if (ex.passage) setPassage(ex.passage)
     }
 
-    // Load all past entries
     const { data: all } = await supabase
       .from('journal_entries').select('*')
       .eq('user_id', session.user.id)
@@ -175,15 +200,16 @@ export default function JournalPage() {
 
   useEffect(() => { loadData() }, [loadData])
 
-  // Fetch ESV text whenever passage changes
+  // Fetch ESV text on weekdays only
   useEffect(() => {
+    if (isSunday(today)) { setEsvLoading(false); return }
     setEsvLoading(true)
     setEsvText('')
     fetchESVText(passage, ESV_KEY).then(text => {
       setEsvText(text)
       setEsvLoading(false)
     })
-  }, [passage])
+  }, [passage, today])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -203,10 +229,10 @@ export default function JournalPage() {
   }
 
   if (loading) return (
-    <div style={S.loadingPage}>
-      <p style={S.loadingText}>Opening your journal…</p>
-    </div>
+    <div style={S.loadingPage}><p style={S.loadingText}>Opening your journal…</p></div>
   )
+
+  const sunday = isSunday(today)
 
   return (
     <div style={S.page}>
@@ -224,77 +250,147 @@ export default function JournalPage() {
 
       {/* ── Tabs ── */}
       <div style={S.tabBar}>
-        <button onClick={() => setTab('write')}
-          style={{...S.tab, ...(tab==='write' ? S.tabActive : {})}}>
+        <button onClick={() => setTab('write')} style={{...S.tab,...(tab==='write'?S.tabActive:{})}}>
           Today&apos;s Entry
         </button>
-        <button onClick={() => setTab('history')}
-          style={{...S.tab, ...(tab==='history' ? S.tabActive : {})}}>
+        <button onClick={() => setTab('history')} style={{...S.tab,...(tab==='history'?S.tabActive:{})}}>
           Past Entries ({pastEntries.length})
         </button>
       </div>
 
       <main style={S.main}>
 
-        {/* ══ WRITE TAB ══ */}
+        {/* ══ WRITE TAB ══════════════════════════════════════════════════════ */}
         {tab === 'write' && (
           <div>
-            {/* Blue passage banner */}
-            <div style={S.passageBanner}>
-              <p style={S.passageDate}>{formatDate(today)}</p>
-              <div style={S.passageTitleRow}>
-                <h2 style={S.passageTitle}>{passage}</h2>
-                <a href={INVITE_URL} target="_blank" rel="noopener noreferrer" style={S.inviteBtn}>
-                 ✉️ Invite a Friend
-                </a>
-              </div>
-            </div>
 
-            {/* ESV scripture card */}
-            <div style={S.esvCard}>
-              <span style={S.esvBadge}>English Standard Version</span>
-              {esvLoading
-                ? <p style={S.esvLoading}>Loading scripture…</p>
-                : <p style={S.esvText}>{esvText}</p>
-              }
-            </div>
-
-            {/* 4 Journal sections */}
-            <div style={S.grid}>
-              {SECTIONS.map(sec => (
-                <div key={sec.key} style={S.card}>
-                  <div style={{...S.sectionHeader, borderLeftColor: sec.color}}>
-                    
-                    <h3 style={{...S.sectionLabel, color: sec.color}}>{sec.label}</h3>
+            {/* ── SUNDAY LAYOUT ── */}
+            {sunday && (
+              <div>
+                {/* Blue banner */}
+                <div style={S.sundayBanner}>
+                  <p style={S.passageDate}>{formatDate(today)}</p>
+                  <div style={S.passageTitleRow}>
+                    <h2 style={S.passageTitle}>Sermon Notes</h2>
+                    <a href={INVITE_URL} target="_blank" rel="noopener noreferrer" style={S.inviteBtn}>
+                      ✉️ Invite a Friend
+                    </a>
                   </div>
-                  <p style={S.sectionPrompt}>{sec.prompt}</p>
+                </div>
+
+                {/* Sermon notes card */}
+                <div style={S.sundayCard}>
+                  {/* Scripture Passage field */}
+                  <label style={S.sundaySectionLabel}>Scripture Passage</label>
+                  <input
+                    type="text"
+                    value={scripture}
+                    onChange={e => setScripture(e.target.value)}
+                    placeholder="e.g. Romans 8:1-11"
+                    style={{...S.sundayInput, marginBottom: '24px'}}
+                  />
+
+                  {/* Minister + Sermon Title side by side */}
+                  <div style={S.sundayFieldRow}>
+                    <div style={S.sundayField}>
+                      <label style={S.sundayFieldLabel}>Minister</label>
+                      <input
+                        type="text"
+                        value={hear}
+                        onChange={e => setHear(e.target.value)}
+                        placeholder="Minister name"
+                        style={S.sundayInput}
+                      />
+                    </div>
+                    <div style={S.sundayField}>
+                      <label style={S.sundayFieldLabel}>Sermon Title</label>
+                      <input
+                        type="text"
+                        value={obey}
+                        onChange={e => setObey(e.target.value)}
+                        placeholder="Sermon title"
+                        style={S.sundayInput}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Large open notes area */}
                   <textarea
-                    value={sec.key==='scripture' ? scripture : sec.key==='hear' ? hear : sec.key==='obey' ? obey : tell}
-                    onChange={e => {
-                      const v = e.target.value
-                      if (sec.key==='scripture') setScripture(v)
-                      else if (sec.key==='hear')  setHear(v)
-                      else if (sec.key==='obey')  setObey(v)
-                      else setTell(v)
-                    }}
-                    placeholder={`Write your ${sec.label.toLowerCase()} here…`}
-                    style={S.textarea}
-                    rows={5}
+                    value={tell}
+                    onChange={e => setTell(e.target.value)}
+                    placeholder="Write your sermon notes here…"
+                    style={S.sundayNotesArea}
                   />
                 </div>
-              ))}
-            </div>
 
-            <div style={S.saveRow}>
-              {saved && <span style={S.savedBadge}>✓ Entry saved!</span>}
-              <button onClick={handleSave} disabled={saving} style={S.saveBtn}>
-                {saving ? 'Saving…' : 'Save Entry'}
-              </button>
-            </div>
+                <div style={S.saveRow}>
+                  {saved && <span style={S.savedBadge}>✓ Notes saved!</span>}
+                  <button onClick={handleSave} disabled={saving} style={S.saveBtn}>
+                    {saving ? 'Saving…' : 'Save Notes'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── WEEKDAY LAYOUT ── */}
+            {!sunday && (
+              <div>
+                {/* Blue passage banner */}
+                <div style={S.passageBanner}>
+                  <p style={S.passageDate}>{formatDate(today)}</p>
+                  <div style={S.passageTitleRow}>
+                    <h2 style={S.passageTitle}>{passage}</h2>
+                    <a href={INVITE_URL} target="_blank" rel="noopener noreferrer" style={S.inviteBtn}>
+                      ✉️ Invite a Friend
+                    </a>
+                  </div>
+                </div>
+
+                {/* ESV scripture */}
+                <div style={S.esvCard}>
+                  <span style={S.esvBadge}>English Standard Version</span>
+                  {esvLoading
+                    ? <p style={S.esvLoading}>Loading scripture…</p>
+                    : <p style={S.esvText}>{esvText}</p>
+                  }
+                </div>
+
+                {/* 4 Journal sections */}
+                <div style={S.grid}>
+                  {SECTIONS.map(sec => (
+                    <div key={sec.key} style={S.card}>
+                      <div style={{...S.sectionHeader, borderLeftColor: sec.color}}>
+                        <h3 style={{...S.sectionLabel, color: sec.color}}>{sec.label}</h3>
+                      </div>
+                      <p style={S.sectionPrompt}>{sec.prompt}</p>
+                      <textarea
+                        value={sec.key==='scripture'?scripture:sec.key==='hear'?hear:sec.key==='obey'?obey:tell}
+                        onChange={e => {
+                          const v = e.target.value
+                          if      (sec.key==='scripture') setScripture(v)
+                          else if (sec.key==='hear')      setHear(v)
+                          else if (sec.key==='obey')      setObey(v)
+                          else                            setTell(v)
+                        }}
+                        placeholder={`Write your ${sec.label.toLowerCase()} here…`}
+                        style={S.textarea} rows={5}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div style={S.saveRow}>
+                  {saved && <span style={S.savedBadge}>✓ Entry saved!</span>}
+                  <button onClick={handleSave} disabled={saving} style={S.saveBtn}>
+                    {saving ? 'Saving…' : 'Save Entry'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* ══ HISTORY TAB ══ */}
+        {/* ══ HISTORY TAB ════════════════════════════════════════════════════ */}
         {tab === 'history' && !viewingEntry && (
           <div>
             <h2 style={S.historyTitle}>Your Journal Entries</h2>
@@ -306,12 +402,14 @@ export default function JournalPage() {
                 <button key={entry.id} onClick={() => setViewingEntry(entry)} style={S.entryCard}>
                   <div style={S.entryCardLeft}>
                     <p style={S.entryCardDate}>{formatDate(entry.entry_date)}</p>
-                    <p style={S.entryCardPassage}>{entry.passage}</p>
-                    {entry.scripture && (
-                      <p style={S.entryCardPreview}>
-                        &ldquo;{entry.scripture.slice(0,80)}{entry.scripture.length > 80 ? '…' : ''}&rdquo;
-                      </p>
-                    )}
+                    <p style={S.entryCardPassage}>
+                      {isSunday(entry.entry_date) ? 'Sermon Notes' : entry.passage}
+                    </p>
+                    {/* Show minister + sermon title for Sundays, scripture preview for weekdays */}
+                    {isSunday(entry.entry_date)
+                      ? entry.hear && <p style={S.entryCardPreview}>{entry.hear}{entry.obey ? ` — ${entry.obey}` : ''}</p>
+                      : entry.scripture && <p style={S.entryCardPreview}>&ldquo;{entry.scripture.slice(0,80)}{entry.scripture.length>80?'…':''}&rdquo;</p>
+                    }
                   </div>
                   <span style={S.entryCardArrow}>→</span>
                 </button>
@@ -320,34 +418,63 @@ export default function JournalPage() {
           </div>
         )}
 
-        {/* ══ ENTRY DETAIL ══ */}
+        {/* ══ ENTRY DETAIL ═══════════════════════════════════════════════════ */}
         {tab === 'history' && viewingEntry && (
           <div>
             <button onClick={() => setViewingEntry(null)} style={S.backBtn}>
               ← Back to entries
             </button>
-            <div style={{...S.passageBanner, borderRadius: '6px'}}>
-              <p style={S.passageDate}>{formatDate(viewingEntry.entry_date)}</p>
-              <div style={S.passageTitleRow}>
-                <h2 style={S.passageTitle}>{viewingEntry.passage}</h2>
-                <a href={INVITE_URL} target="_blank" rel="noopener noreferrer" style={S.inviteBtn}>
-                 ✉️ Invite a Friend
-                </a>
-              </div>
-            </div>
-            <div style={S.grid}>
-              {SECTIONS.map(sec => (
-                <div key={sec.key} style={S.card}>
-                  <div style={{...S.sectionHeader, borderLeftColor: sec.color}}>
-                    
-                    <h3 style={{...S.sectionLabel, color: sec.color}}>{sec.label}</h3>
-                  </div>
-                  <p style={S.readonlyText}>
-                    {viewingEntry[sec.key] || <em style={{color:'#bbb'}}>Not filled in</em>}
-                  </p>
+
+            {/* Sunday detail */}
+            {isSunday(viewingEntry.entry_date) ? (
+              <div>
+                <div style={S.sundayBanner}>
+                  <p style={S.passageDate}>{formatDate(viewingEntry.entry_date)}</p>
+                  <h2 style={S.passageTitle}>Sermon Notes</h2>
                 </div>
-              ))}
-            </div>
+                <div style={S.sundayCard}>
+                  <label style={S.sundaySectionLabel}>Scripture Passage</label>
+                  <p style={{...S.readonlyText, marginBottom:'20px'}}>{viewingEntry.scripture || <em style={{color:'#bbb'}}>Not filled in</em>}</p>
+                  <div style={S.sundayFieldRow}>
+                    <div style={S.sundayField}>
+                      <label style={S.sundayFieldLabel}>Minister</label>
+                      <p style={S.readonlyText}>{viewingEntry.hear || <em style={{color:'#bbb'}}>—</em>}</p>
+                    </div>
+                    <div style={S.sundayField}>
+                      <label style={S.sundayFieldLabel}>Sermon Title</label>
+                      <p style={S.readonlyText}>{viewingEntry.obey || <em style={{color:'#bbb'}}>—</em>}</p>
+                    </div>
+                  </div>
+                  <label style={{...S.sundaySectionLabel, marginTop:'16px'}}>Notes</label>
+                  <p style={S.readonlyText}>{viewingEntry.tell || <em style={{color:'#bbb'}}>Not filled in</em>}</p>
+                </div>
+              </div>
+            ) : (
+              /* Weekday detail */
+              <div>
+                <div style={{...S.passageBanner, borderRadius:'6px', marginBottom:'20px'}}>
+                  <p style={S.passageDate}>{formatDate(viewingEntry.entry_date)}</p>
+                  <div style={S.passageTitleRow}>
+                    <h2 style={S.passageTitle}>{viewingEntry.passage}</h2>
+                    <a href={INVITE_URL} target="_blank" rel="noopener noreferrer" style={S.inviteBtn}>
+                      ✉️ Invite a Friend
+                    </a>
+                  </div>
+                </div>
+                <div style={S.grid}>
+                  {SECTIONS.map(sec => (
+                    <div key={sec.key} style={S.card}>
+                      <div style={{...S.sectionHeader, borderLeftColor: sec.color}}>
+                        <h3 style={{...S.sectionLabel, color: sec.color}}>{sec.label}</h3>
+                      </div>
+                      <p style={S.readonlyText}>
+                        {viewingEntry[sec.key] || <em style={{color:'#bbb'}}>Not filled in</em>}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
