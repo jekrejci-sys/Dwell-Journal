@@ -96,7 +96,6 @@ const S: Record<string,React.CSSProperties> = {
   // Standard weekday banner (rounded top only — ESV card attaches below)
   passageBanner:{background:BLUE,borderRadius:'6px 6px 0 0',padding:'28px 32px 20px',color:'#fff'},
   // Sunday banner (fully rounded — no card below)
-  sundayBanner:{background:BLUE,borderRadius:'6px',padding:'28px 32px 24px',marginBottom:'28px',color:'#fff'},
   passageDate:{fontSize:'12px',letterSpacing:'2px',textTransform:'uppercase',color:'rgba(255,255,255,0.65)',margin:'0 0 8px'},
   passageTitleRow:{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'16px'},
   passageTitle:{fontSize:'28px',fontWeight:'400',margin:'0',fontStyle:'italic'},
