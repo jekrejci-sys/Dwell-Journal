@@ -140,6 +140,25 @@ const S: Record<string,React.CSSProperties> = {
   entryCardPreview:{fontSize:'13px',color:'#888',margin:'0',fontStyle:'italic'},
   entryCardArrow:{fontSize:'20px',color:GOLD,marginLeft:'16px'},
   backBtn:{background:'none',border:'none',color:BLUE,cursor:'pointer',fontSize:'14px',fontFamily:"'Georgia',serif",padding:'0',marginBottom:'20px',textDecoration:'underline'},
+
+  // About tab
+  aboutWrap:{maxWidth:'680px',margin:'0 auto'},
+  aboutTitle:{fontSize:'22px',color:BLUE,fontFamily:"'Georgia',serif",fontWeight:'700',letterSpacing:'2px',textTransform:'uppercase',marginBottom:'24px'},
+  aboutBody:{fontSize:'15px',lineHeight:'1.8',color:'#333',fontFamily:"'Georgia',serif",marginBottom:'16px'},
+  aboutHighlight:{color:GOLD,fontWeight:'700'},
+  aboutList:{paddingLeft:'20px',margin:'0 0 28px'},
+  aboutListItem:{fontSize:'15px',lineHeight:'1.8',color:'#333',fontFamily:"'Georgia',serif",marginBottom:'16px'},
+  aboutStepLabel:{color:GOLD,fontWeight:'700'},
+  aboutContactCard:{background:BLUE,borderRadius:'6px',overflow:'hidden'},
+  aboutContactHeader:{background:'rgba(184,147,58,0.9)',padding:'14px 24px'},
+  aboutContactName:{color:WHITE,fontSize:'14px',fontFamily:"'Georgia',serif",margin:'0'},
+  aboutContactBody:{padding:'24px'},
+  aboutContactTitle:{fontSize:'20px',color:WHITE,fontFamily:"'Georgia',serif",fontWeight:'400',marginBottom:'12px',lineHeight:'1.4'},
+  aboutContactText:{fontSize:'13px',color:'rgba(255,255,255,0.85)',fontFamily:"'Georgia',serif",lineHeight:'1.7',marginBottom:'20px'},
+  aboutContactRow:{display:'flex',gap:'24px',flexWrap:'wrap' as const},
+  aboutContactInfo:{fontSize:'13px',color:'rgba(255,255,255,0.85)',fontFamily:"'Georgia',serif",margin:'0 0 2px'},
+  aboutContactLink:{fontSize:'13px',color:GOLD,fontFamily:"'Georgia',serif",textDecoration:'none'},
+  aboutContactStory:{fontSize:'13px',color:'rgba(255,255,255,0.85)',fontFamily:"'Georgia',serif",lineHeight:'1.7',flex:'1',minWidth:'200px',margin:'0'},
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -164,7 +183,7 @@ export default function JournalPage() {
   const [pastEntries, setPastEntries]   = useState<JournalEntry[]>([])
   const [viewingEntry, setViewingEntry] = useState<JournalEntry | null>(null)
   const [firstName, setFirstName] = useState('')
-  const [tab, setTab]             = useState<'write'|'history'>('write')
+  const [tab, setTab]             = useState<'write'|'history'|'about'>('write')
   const [loading, setLoading]     = useState(true)
 
   const loadData = useCallback(async () => {
@@ -203,13 +222,16 @@ export default function JournalPage() {
   // Fetch ESV text on weekdays only
   useEffect(() => {
     if (isSunday(today)) { setEsvLoading(false); return }
+    if (!passage || passage === 'No passage scheduled today') { setEsvLoading(false); return }
     setEsvLoading(true)
     setEsvText('')
-    fetchESVText(passage, ESV_KEY).then(text => {
+    const passageToFetch = passage
+    fetchESVText(passageToFetch, ESV_KEY).then(text => {
       setEsvText(text)
       setEsvLoading(false)
     })
-  }, [passage, today])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [today])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -255,6 +277,9 @@ export default function JournalPage() {
         </button>
         <button onClick={() => setTab('history')} style={{...S.tab,...(tab==='history'?S.tabActive:{})}}>
           Past Entries ({pastEntries.length})
+        </button>
+        <button onClick={() => setTab('about')} style={{...S.tab,...(tab==='about'?S.tabActive:{})}}>
+          About
         </button>
       </div>
 
@@ -475,6 +500,90 @@ export default function JournalPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ══ ABOUT TAB ══════════════════════════════════════════════════════ */}
+        {tab === 'about' && (
+          <div style={S.aboutWrap}>
+
+            <h2 style={S.aboutTitle}>How to Use Your Journal</h2>
+
+            {/* Pray */}
+            <p style={S.aboutBody}>
+              <span style={S.aboutHighlight}>Pray — </span>
+              Before you start reading, pray something like this: Lord, forgive me for my sin
+              and cleanse my heart. Fill me with your Spirit and help me to focus and hear your
+              voice. And now, Lord, &ldquo;Open my eyes, that I may behold wondrous things out
+              of your law&rdquo; (Psalm 119:18).
+            </p>
+
+            {/* Read */}
+            <p style={S.aboutBody}>
+              <span style={S.aboutHighlight}>Read — </span>
+              Now as you read, highlight a few verses that stand out to you. Learn to trust
+              that this is the Lord speaking to you through His Spirit. Then, you can use your
+              journal like this:
+            </p>
+
+            {/* 4 steps */}
+            <ol style={S.aboutList}>
+              <li style={S.aboutListItem}>
+                <span style={S.aboutStepLabel}>READ Scripture</span> — In your journal, write
+                out the 2–3 verses that you highlighted, or in your digital journal, copy and
+                paste the highlighted verses.
+              </li>
+              <li style={S.aboutListItem}>
+                <span style={S.aboutStepLabel}>HEAR God&apos;s voice</span> — As you listen,
+                jot down what you hear God saying to you through the verses you highlighted.
+                It takes practice, but keep at it as you learn to discern God&apos;s voice as
+                you read. <em>He wants to speak to you through His Word!</em> John 10:27 says,
+                &ldquo;My sheep hear my voice; I know them, and they follow me.&rdquo;
+              </li>
+              <li style={S.aboutListItem}>
+                <span style={S.aboutStepLabel}>OBEY God&apos;s instruction</span> — Jot down
+                how you can be obedient to what God is telling you. John 14:15 says, &ldquo;If
+                you love me, you will keep my commandments.&rdquo;
+              </li>
+              <li style={S.aboutListItem}>
+                <span style={S.aboutStepLabel}>TELL a friend</span> — Who do you know who
+                might need this word of encouragement today? Ask the Lord to give you an
+                opportunity to share this uplifting word with them this week. Mark 16:15 says,
+                &ldquo;And he said to them, &lsquo;Go into all the world and proclaim the
+                gospel to the whole creation.&rsquo;&rdquo;
+              </li>
+            </ol>
+
+            {/* Keith Lowry contact card */}
+            <div style={S.aboutContactCard}>
+              <div style={S.aboutContactHeader}>
+                <p style={S.aboutContactName}>Note From <strong>Keith Lowry</strong></p>
+              </div>
+              <div style={S.aboutContactBody}>
+                <div>
+                  <p style={S.aboutContactTitle}>Questions? Ideas? Need Help with Journaling?</p>
+                  <p style={S.aboutContactText}>
+                    I&apos;m happy to help! I look forward to hearing how God is using this
+                    journal to bless you and guide you every day. NOTE: You&apos;ll now find
+                    the sermon passage for each week at pcbc.org/dwell. I hope you&apos;ll
+                    find time on Saturday (or another time) to pre-read these passages!
+                  </p>
+                  <div style={S.aboutContactRow}>
+                    <div>
+                      <p style={S.aboutContactInfo}>Keith Lowry</p>
+                      <p style={S.aboutContactInfo}>Discipleship Pastor</p>
+                      <a href="mailto:klowry@pcbc.org" style={S.aboutContactLink}>klowry@pcbc.org</a>
+                    </div>
+                    <p style={S.aboutContactStory}>
+                      Do you have a story about how your DWELL journal has had a positive
+                      impact on your life? If so, please email us at klowry@pcbc.org. We
+                      believe your story will be an encouragement to others! Thank you!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         )}
 
